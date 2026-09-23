@@ -13,6 +13,7 @@ The MVP has no accounts or backend, but its core engine must support future rank
 The homepage opens directly into a ready challenge—no landing page, login, or onboarding gate.
 
 - Focus the editor on load.
+- Show the target document in a read-only side-by-side panel throughout the attempt.
 - Start timing on the first document-changing input.
 - Finish automatically when the document matches the target.
 - Show time, keystrokes, personal best, retry, and next challenge.
@@ -27,7 +28,7 @@ Practice is a separate menu destination.
 
 - Browse scenarios by skill, language, difficulty, and pack.
 - Repeat a selected scenario at `/practice/:id`.
-- Allow reset, target reveal, hints, and suggested solutions.
+- Show the target in a read-only side-by-side panel and allow reset, hints, and suggested solutions.
 - Keep Practice results separate from Test personal bests.
 
 ### MVP boundaries

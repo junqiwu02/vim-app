@@ -7,7 +7,7 @@ const scenarioSchema = z.object({
   difficulty: z.enum(['easy', 'medium', 'hard']), tags: z.array(z.string()), language: z.enum(['javascript', 'typescript', 'python', 'text']),
   startText: z.string(), targetText: z.string(), cursor: z.object({ line: z.number().int().nonnegative(), column: z.number().int().nonnegative() }),
   editor: z.object({ tabSize: z.number().int().min(1).max(8), insertSpaces: z.boolean() }), rules: z.object({ allowClipboard: z.boolean() }),
-  validation: z.object({ type: z.literal('exact'), normalizeLineEndings: z.boolean(), ignoreTrailingWhitespace: z.boolean() }),
+  validation: z.object({ type: z.literal('exact'), normalizeLineEndings: z.boolean(), ignoreTrailingWhitespace: z.boolean(), ignoreBlankLines: z.boolean().default(true) }),
   reference: z.object({ parKeystrokes: z.number().int().positive().optional(), suggestedSolution: z.string().optional(), hint: z.string().optional() }).optional(),
   pack: z.string().optional(),
 })
@@ -30,6 +30,7 @@ export function parseScenarioImport(input: string): ImportResult {
 export function normalized(text: string, rules: Scenario['validation']) {
   let value = rules.normalizeLineEndings ? text.replace(/\r\n?/g, '\n') : text
   if (rules.ignoreTrailingWhitespace) value = value.split('\n').map(line => line.trimEnd()).join('\n')
+  if (rules.ignoreBlankLines !== false) value = value.split('\n').filter(line => line.trim().length > 0).join('\n')
   return value
 }
 export function isComplete(text: string, scenario: Scenario) { return normalized(text, scenario.validation) === normalized(scenario.targetText, scenario.validation) }

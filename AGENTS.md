@@ -45,7 +45,9 @@ Before handing off a change, run `npm test`, `npm run lint`, and `npm run build`
 - The target remains clearly visible in a read-only side-by-side panel during Test and Practice attempts.
 - Test timing starts on the first document mutation, not on page load or navigation.
 - Completion is exact-text matching, subject only to the scenario's declared normalization rules.
+- Built-in completion ignores empty and whitespace-only lines, but every character on nonblank lines remains exact unless another normalization rule says otherwise.
 - Completion fires once and freezes the result.
+- `:w` continues after completion, `:e` resets the current attempt, and `:n` abandons it for a random different Test scenario when alternatives exist.
 - Test attempts never show hints or suggested solutions.
 - Practice lives under `/practice` and may reveal targets, hints, and suggested solutions.
 - Practice results and Test personal bests remain separate.
@@ -59,6 +61,7 @@ Before handing off a change, run `npm test`, `npm run lint`, and `npm run build`
 - Validate all imported scenarios with Zod and return errors with actionable JSON paths.
 - Keep scenario IDs stable.
 - Increment `contentVersion` whenever a scenario change affects run comparability.
+- Keep built-in `startText` and `targetText` newline-terminated.
 - Lines and columns are zero-based.
 - Check duplicate IDs before persistence and make conflicts explicit to the user.
 - Every built-in scenario should have a reachable target and a verified suggested solution when one is provided.
@@ -66,6 +69,7 @@ Before handing off a change, run `npm test`, `npm run lint`, and `npm run build`
 ## UI and accessibility
 
 - Preserve automatic editor focus and keyboard-first operation.
+- Preserve the unfocused-editor blur and focus prompt. Clicking it or pressing a plain key outside interactive controls should restore editor focus; do not hijack Tab or modifier shortcuts.
 - Do not intercept keys in a way that breaks Vim motions, operators, counts, registers, undo, repeat, search, or visual mode.
 - Keep essential controls reachable without a pointer and provide accessible labels for icon-only controls.
 - Maintain usable layouts at phone and desktop widths.

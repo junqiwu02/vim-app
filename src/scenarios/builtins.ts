@@ -1,7 +1,8 @@
 import type { Scenario } from '../core/types'
 
-const defaults = { schemaVersion: 1 as const, type: 'scenario' as const, contentVersion: '1.0.0', cursor: { line: 0, column: 0 }, editor: { tabSize: 2, insertSpaces: true }, rules: { allowClipboard: false }, validation: { type: 'exact' as const, normalizeLineEndings: true, ignoreTrailingWhitespace: false }, pack: 'Core drills' }
-const make = (s: Partial<Scenario> & Pick<Scenario, 'id'|'title'|'description'|'difficulty'|'tags'|'language'|'startText'|'targetText'>): Scenario => ({ ...defaults, ...s })
+const defaults = { schemaVersion: 1 as const, type: 'scenario' as const, contentVersion: '1.1.0', cursor: { line: 0, column: 0 }, editor: { tabSize: 2, insertSpaces: true }, rules: { allowClipboard: false }, validation: { type: 'exact' as const, normalizeLineEndings: true, ignoreTrailingWhitespace: false, ignoreBlankLines: true }, pack: 'Core drills' }
+const newlineTerminated = (text:string)=>text.endsWith('\n')?text:`${text}\n`
+const make = (s: Partial<Scenario> & Pick<Scenario, 'id'|'title'|'description'|'difficulty'|'tags'|'language'|'startText'|'targetText'>): Scenario => ({ ...defaults, ...s, startText:newlineTerminated(s.startText), targetText:newlineTerminated(s.targetText) })
 export const builtins: Scenario[] = [
   make({ id:'text.delete-word.001', title:'Cut the clutter', description:'Delete the unnecessary word.', difficulty:'easy', tags:['delete','word'], language:'text', startText:'Ship the very feature today.', targetText:'Ship the feature today.', cursor:{line:0,column:9}, reference:{parKeystrokes:3, hint:'Delete a word with an operator and motion.', suggestedSolution:'dw'} }),
   make({ id:'javascript.rename.001', title:'Rename precisely', description:'Rename the local value everywhere.', difficulty:'easy', tags:['change','repeat'], language:'javascript', startText:'const n = 4;\nconsole.log(n * n);', targetText:'const size = 4;\nconsole.log(size * size);', cursor:{line:0,column:6}, reference:{parKeystrokes:18, hint:'Change the word, then find and repeat.', suggestedSolution:'ciwsize<Esc> /n<Enter> . /n<Enter> .'} }),

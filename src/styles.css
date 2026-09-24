@@ -27,6 +27,17 @@
 .diff-target .target-footer{justify-content:space-between;color:var(--faint)}
 .diff-target .target-footer span:last-child{margin-left:0;text-transform:uppercase;letter-spacing:.08em}
 .diff-source .editor-footer span:last-child{margin-left:auto}
+.editor-shell{position:relative;overflow:hidden}
+.editor-host{transition:filter .16s ease,opacity .16s ease}
+.editor-shell.is-unfocused .editor-host{filter:blur(4px);opacity:.42}
+.diff-source .diff-pane-header,.diff-source .editor-footer{transition:filter .16s ease,opacity .16s ease}
+.diff-source:has(.editor-shell.is-unfocused) .diff-pane-header,.diff-source:has(.editor-shell.is-unfocused) .editor-footer{filter:blur(3px);opacity:.48}
+.editor-focus-overlay{position:absolute;inset:0;z-index:5;width:100%;border:0;background:rgba(11,13,12,.18);color:var(--text);display:flex;align-items:center;justify-content:center;gap:9px;font:500 12px DM Mono,monospace;cursor:text}
+.editor-focus-overlay svg{color:var(--accent);filter:drop-shadow(0 0 7px rgba(183,239,85,.35))}
+.editor-focus-overlay:focus-visible{outline:2px solid var(--accent);outline-offset:-4px}
+.under-editor .write-message{color:var(--danger)}
+.result-actions .button-outline kbd{font:500 9px DM Mono,monospace;background:#272c28;border:1px solid #363d37;border-radius:3px;padding:2px 5px;color:#b7bdb8}
+.button-primary kbd{font:500 9px DM Mono,monospace;border:1px solid rgba(17,23,11,.25);border-radius:3px;padding:2px 5px}
 
 @media(max-width:800px){.diff-workspace{grid-template-columns:1fr;border-radius:0 0 9px 9px}.diff-pane+.diff-pane{border-left:0;border-top:1px solid var(--line)}.diff-target{order:-1}.target-viewer,.target-viewer .cm-editor{min-height:210px;max-height:240px}.target-viewer .cm-scroller{max-height:240px}.diff-source .editor-shell,.diff-source .cm-editor{min-height:275px}}
 @media(max-width:520px){.diff-pane-header{height:38px;padding:0 12px}.target-viewer,.target-viewer .cm-editor{min-height:170px;max-height:200px}.target-viewer .cm-scroller{max-height:200px}}

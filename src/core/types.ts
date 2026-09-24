@@ -16,7 +16,7 @@ export interface Scenario {
   cursor: { line: number; column: number }
   editor: { tabSize: number; insertSpaces: boolean }
   rules: { allowClipboard: boolean }
-  validation: { type: 'exact'; normalizeLineEndings: boolean; ignoreTrailingWhitespace: boolean }
+  validation: { type: 'exact'; normalizeLineEndings: boolean; ignoreTrailingWhitespace: boolean; ignoreBlankLines?: boolean }
   reference?: { parKeystrokes?: number; suggestedSolution?: string; hint?: string }
   pack?: string
 }

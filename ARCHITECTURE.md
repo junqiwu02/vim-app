@@ -140,7 +140,8 @@ Every file must have a `schemaVersion`. Validate imports with Zod and show error
   "validation": {
     "type": "exact",
     "normalizeLineEndings": true,
-    "ignoreTrailingWhitespace": false
+    "ignoreTrailingWhitespace": false,
+    "ignoreBlankLines": true
   },
   "reference": {
     "parKeystrokes": 28,
@@ -149,7 +150,7 @@ Every file must have a `schemaVersion`. Validate imports with Zod and show error
 }
 ```
 
-Lines and columns are zero-based. IDs remain stable; increment `contentVersion` when a change affects run comparability.
+Lines and columns are zero-based. IDs remain stable; increment `contentVersion` when a change affects run comparability. Built-in start and target documents are newline-terminated. When `ignoreBlankLines` is enabled, empty and whitespace-only lines do not affect exact-match completion; all content on nonblank lines remains exact.
 
 Packs wrap scenarios:
 

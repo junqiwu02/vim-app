@@ -1,19 +1,224 @@
 import type { Scenario } from '../core/types'
 
-const defaults = { schemaVersion: 1 as const, type: 'scenario' as const, contentVersion: '1.1.0', cursor: { line: 0, column: 0 }, editor: { tabSize: 2, insertSpaces: true }, rules: { allowClipboard: false }, validation: { type: 'exact' as const, normalizeLineEndings: true, ignoreTrailingWhitespace: false, ignoreBlankLines: true }, pack: 'Core drills' }
-const newlineTerminated = (text:string)=>text.endsWith('\n')?text:`${text}\n`
-const make = (s: Partial<Scenario> & Pick<Scenario, 'id'|'title'|'description'|'difficulty'|'tags'|'language'|'startText'|'targetText'>): Scenario => ({ ...defaults, ...s, startText:newlineTerminated(s.startText), targetText:newlineTerminated(s.targetText) })
+const defaults = {
+  schemaVersion: 1 as const,
+  type: 'scenario' as const,
+  contentVersion: '1.1.0',
+  cursor: { line: 0, column: 0 },
+  editor: { tabSize: 2, insertSpaces: true },
+  rules: { allowClipboard: false },
+  validation: {
+    type: 'exact' as const,
+    normalizeLineEndings: true,
+    ignoreTrailingWhitespace: false,
+    ignoreBlankLines: true,
+  },
+  pack: 'Core drills',
+}
+const newlineTerminated = (text: string) => (text.endsWith('\n') ? text : `${text}\n`)
+const make = (
+  s: Partial<Scenario> &
+    Pick<
+      Scenario,
+      | 'id'
+      | 'title'
+      | 'description'
+      | 'difficulty'
+      | 'tags'
+      | 'language'
+      | 'startText'
+      | 'targetText'
+    >,
+): Scenario => ({
+  ...defaults,
+  ...s,
+  startText: newlineTerminated(s.startText),
+  targetText: newlineTerminated(s.targetText),
+})
 export const builtins: Scenario[] = [
-  make({ id:'text.delete-word.001', title:'Cut the clutter', description:'Delete the unnecessary word.', difficulty:'easy', tags:['delete','word'], language:'text', startText:'Ship the very feature today.', targetText:'Ship the feature today.', cursor:{line:0,column:9}, reference:{parKeystrokes:3, hint:'Delete a word with an operator and motion.', suggestedSolution:'dw'} }),
-  make({ id:'javascript.rename.001', title:'Rename precisely', description:'Rename the local value everywhere.', difficulty:'easy', tags:['change','repeat'], language:'javascript', startText:'const n = 4;\nconsole.log(n * n);', targetText:'const size = 4;\nconsole.log(size * size);', cursor:{line:0,column:6}, reference:{parKeystrokes:18, hint:'Change the word, then find and repeat.', suggestedSolution:'ciwsize<Esc> /n<Enter> . /n<Enter> .'} }),
-  make({ id:'javascript.boolean.001', title:'Flip the flag', description:'Change the boolean literal.', difficulty:'easy', tags:['change','word'], language:'javascript', startText:'const enabled = false;', targetText:'const enabled = true;', cursor:{line:0,column:16}, reference:{parKeystrokes:7, hint:'Change inside the current word.', suggestedSolution:'ciwtrue<Esc>'} }),
-  make({ id:'python.operator.001', title:'Fix the comparison', description:'Use the correct comparison operator.', difficulty:'easy', tags:['replace','character'], language:'python', startText:'if score > 10:\n    celebrate()', targetText:'if score >= 10:\n    celebrate()', cursor:{line:0,column:9}, reference:{parKeystrokes:3, hint:'Append one character.', suggestedSolution:'a=<Esc>'} }),
-  make({ id:'typescript.type.001', title:'Tighten the type', description:'Replace any with a useful type.', difficulty:'easy', tags:['change','word'], language:'typescript', startText:'function greet(name: any) {\n  return `Hi ${name}`\n}', targetText:'function greet(name: string) {\n  return `Hi ${name}`\n}', cursor:{line:0,column:21}, reference:{parKeystrokes:9, hint:'Change the word under the cursor.', suggestedSolution:'ciwstring<Esc>'} }),
-  make({ id:'javascript.extract-variable.001', title:'Extract a variable', description:'Replace a repeated expression with a local.', difficulty:'medium', tags:['insert','change'], language:'javascript', startText:'function total(items) {\n  return items.length * 10 + items.length;\n}', targetText:'function total(items) {\n  const count = items.length;\n  return count * 10 + count;\n}', cursor:{line:1,column:2}, reference:{parKeystrokes:40, hint:'Open a line, define the value, then substitute occurrences.', suggestedSolution:'Oconst count = items.length;<Esc> j :s/items.length/count/g<Enter>'} }),
-  make({ id:'python.wrap.001', title:'Add a guard', description:'Insert an early return before division.', difficulty:'medium', tags:['insert','line'], language:'python', startText:'def ratio(a, b):\n    return a / b', targetText:'def ratio(a, b):\n    if b == 0:\n        return 0\n    return a / b', cursor:{line:1,column:4}, reference:{parKeystrokes:35, hint:'Open lines above the return.', suggestedSolution:'Oif b == 0:<Esc> oreturn 0<Esc> >>'} }),
-  make({ id:'javascript.object.001', title:'Expand the object', description:'Add an active property.', difficulty:'medium', tags:['insert','object'], language:'javascript', startText:'const user = { name: "Ada" };', targetText:'const user = { name: "Ada", active: true };', cursor:{line:0,column:25}, reference:{parKeystrokes:17, hint:'Insert before the closing brace.', suggestedSolution:'i, active: true<Esc>'} }),
-  make({ id:'text.swap.001', title:'Reverse the order', description:'Move the second line above the first.', difficulty:'medium', tags:['line','move'], language:'text', startText:'run tests\nwrite code\nship', targetText:'write code\nrun tests\nship', cursor:{line:0,column:0}, reference:{parKeystrokes:3, hint:'Move the current line down.', suggestedSolution:'ddp'} }),
-  make({ id:'javascript.return.001', title:'Return early', description:'Invert the condition and return early.', difficulty:'hard', tags:['change','delete','insert'], language:'javascript', startText:'if (user) {\n  send(user);\n}', targetText:'if (!user) return;\nsend(user);', cursor:{line:0,column:0}, reference:{parKeystrokes:30, hint:'Rewrite the condition line, then dedent the body.', suggestedSolution:'ccif (!user) return;<Esc> j << $x'} }),
-  make({ id:'python.list.001', title:'List comprehension', description:'Condense the loop into a comprehension.', difficulty:'hard', tags:['change','block'], language:'python', startText:'squares = []\nfor n in range(5):\n    squares.append(n * n)', targetText:'squares = [n * n for n in range(5)]', cursor:{line:0,column:0}, reference:{parKeystrokes:43, hint:'Change the entire three-line block.', suggestedSolution:'3ccsquares = [n * n for n in range(5)]<Esc>'} }),
-  make({ id:'text.punctuation.001', title:'Polish the sentence', description:'Fix capitalization and punctuation.', difficulty:'medium', tags:['replace','append'], language:'text', startText:'vim rewards deliberate practice', targetText:'Vim rewards deliberate practice.', cursor:{line:0,column:0}, reference:{parKeystrokes:5, hint:'Toggle case, then append at line end.', suggestedSolution:'~A.<Esc>'} }),
+  make({
+    id: 'text.delete-word.001',
+    title: 'Cut the clutter',
+    description: 'Delete the unnecessary word.',
+    difficulty: 'easy',
+    tags: ['delete', 'word'],
+    language: 'text',
+    startText: 'Ship the very feature today.',
+    targetText: 'Ship the feature today.',
+    cursor: { line: 0, column: 9 },
+    reference: {
+      parKeystrokes: 3,
+      hint: 'Delete a word with an operator and motion.',
+      suggestedSolution: 'dw',
+    },
+  }),
+  make({
+    id: 'javascript.rename.001',
+    title: 'Rename precisely',
+    description: 'Rename the local value everywhere.',
+    difficulty: 'easy',
+    tags: ['change', 'repeat'],
+    language: 'javascript',
+    startText: 'const n = 4;\nconsole.log(n * n);',
+    targetText: 'const size = 4;\nconsole.log(size * size);',
+    cursor: { line: 0, column: 6 },
+    reference: {
+      parKeystrokes: 18,
+      hint: 'Change the word, then find and repeat.',
+      suggestedSolution: 'ciwsize<Esc> /n<Enter> . /n<Enter> .',
+    },
+  }),
+  make({
+    id: 'javascript.boolean.001',
+    title: 'Flip the flag',
+    description: 'Change the boolean literal.',
+    difficulty: 'easy',
+    tags: ['change', 'word'],
+    language: 'javascript',
+    startText: 'const enabled = false;',
+    targetText: 'const enabled = true;',
+    cursor: { line: 0, column: 16 },
+    reference: {
+      parKeystrokes: 7,
+      hint: 'Change inside the current word.',
+      suggestedSolution: 'ciwtrue<Esc>',
+    },
+  }),
+  make({
+    id: 'python.operator.001',
+    title: 'Fix the comparison',
+    description: 'Use the correct comparison operator.',
+    difficulty: 'easy',
+    tags: ['replace', 'character'],
+    language: 'python',
+    startText: 'if score > 10:\n    celebrate()',
+    targetText: 'if score >= 10:\n    celebrate()',
+    cursor: { line: 0, column: 9 },
+    reference: { parKeystrokes: 3, hint: 'Append one character.', suggestedSolution: 'a=<Esc>' },
+  }),
+  make({
+    id: 'typescript.type.001',
+    title: 'Tighten the type',
+    description: 'Replace any with a useful type.',
+    difficulty: 'easy',
+    tags: ['change', 'word'],
+    language: 'typescript',
+    startText: 'function greet(name: any) {\n  return `Hi ${name}`\n}',
+    targetText: 'function greet(name: string) {\n  return `Hi ${name}`\n}',
+    cursor: { line: 0, column: 21 },
+    reference: {
+      parKeystrokes: 9,
+      hint: 'Change the word under the cursor.',
+      suggestedSolution: 'ciwstring<Esc>',
+    },
+  }),
+  make({
+    id: 'javascript.extract-variable.001',
+    title: 'Extract a variable',
+    description: 'Replace a repeated expression with a local.',
+    difficulty: 'medium',
+    tags: ['insert', 'change'],
+    language: 'javascript',
+    startText: 'function total(items) {\n  return items.length * 10 + items.length;\n}',
+    targetText:
+      'function total(items) {\n  const count = items.length;\n  return count * 10 + count;\n}',
+    cursor: { line: 1, column: 2 },
+    reference: {
+      parKeystrokes: 40,
+      hint: 'Open a line, define the value, then substitute occurrences.',
+      suggestedSolution: 'Oconst count = items.length;<Esc> j :s/items.length/count/g<Enter>',
+    },
+  }),
+  make({
+    id: 'python.wrap.001',
+    title: 'Add a guard',
+    description: 'Insert an early return before division.',
+    difficulty: 'medium',
+    tags: ['insert', 'line'],
+    language: 'python',
+    startText: 'def ratio(a, b):\n    return a / b',
+    targetText: 'def ratio(a, b):\n    if b == 0:\n        return 0\n    return a / b',
+    cursor: { line: 1, column: 4 },
+    reference: {
+      parKeystrokes: 35,
+      hint: 'Open lines above the return.',
+      suggestedSolution: 'Oif b == 0:<Esc> oreturn 0<Esc> >>',
+    },
+  }),
+  make({
+    id: 'javascript.object.001',
+    title: 'Expand the object',
+    description: 'Add an active property.',
+    difficulty: 'medium',
+    tags: ['insert', 'object'],
+    language: 'javascript',
+    startText: 'const user = { name: "Ada" };',
+    targetText: 'const user = { name: "Ada", active: true };',
+    cursor: { line: 0, column: 25 },
+    reference: {
+      parKeystrokes: 17,
+      hint: 'Insert before the closing brace.',
+      suggestedSolution: 'i, active: true<Esc>',
+    },
+  }),
+  make({
+    id: 'text.swap.001',
+    title: 'Reverse the order',
+    description: 'Move the second line above the first.',
+    difficulty: 'medium',
+    tags: ['line', 'move'],
+    language: 'text',
+    startText: 'run tests\nwrite code\nship',
+    targetText: 'write code\nrun tests\nship',
+    cursor: { line: 0, column: 0 },
+    reference: { parKeystrokes: 3, hint: 'Move the current line down.', suggestedSolution: 'ddp' },
+  }),
+  make({
+    id: 'javascript.return.001',
+    title: 'Return early',
+    description: 'Invert the condition and return early.',
+    difficulty: 'hard',
+    tags: ['change', 'delete', 'insert'],
+    language: 'javascript',
+    startText: 'if (user) {\n  send(user);\n}',
+    targetText: 'if (!user) return;\nsend(user);',
+    cursor: { line: 0, column: 0 },
+    reference: {
+      parKeystrokes: 30,
+      hint: 'Rewrite the condition line, then dedent the body.',
+      suggestedSolution: 'ccif (!user) return;<Esc> j << $x',
+    },
+  }),
+  make({
+    id: 'python.list.001',
+    title: 'List comprehension',
+    description: 'Condense the loop into a comprehension.',
+    difficulty: 'hard',
+    tags: ['change', 'block'],
+    language: 'python',
+    startText: 'squares = []\nfor n in range(5):\n    squares.append(n * n)',
+    targetText: 'squares = [n * n for n in range(5)]',
+    cursor: { line: 0, column: 0 },
+    reference: {
+      parKeystrokes: 43,
+      hint: 'Change the entire three-line block.',
+      suggestedSolution: '3ccsquares = [n * n for n in range(5)]<Esc>',
+    },
+  }),
+  make({
+    id: 'text.punctuation.001',
+    title: 'Polish the sentence',
+    description: 'Fix capitalization and punctuation.',
+    difficulty: 'medium',
+    tags: ['replace', 'append'],
+    language: 'text',
+    startText: 'vim rewards deliberate practice',
+    targetText: 'Vim rewards deliberate practice.',
+    cursor: { line: 0, column: 0 },
+    reference: {
+      parKeystrokes: 5,
+      hint: 'Toggle case, then append at line end.',
+      suggestedSolution: '~A.<Esc>',
+    },
+  }),
 ]

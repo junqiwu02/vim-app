@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { EditorState, Compartment } from '@codemirror/state'
+import { indentUnit } from '@codemirror/language'
 import {
   EditorView,
   keymap,
@@ -10,10 +11,11 @@ import {
 import { defaultKeymap, history, historyKeymap } from '@codemirror/commands'
 import { javascript } from '@codemirror/lang-javascript'
 import { python } from '@codemirror/lang-python'
-import { vim, Vim } from '@replit/codemirror-vim'
+import { getCM, vim, Vim } from '@replit/codemirror-vim'
 import { MousePointer2 } from 'lucide-react'
-import type { Scenario, ThemeId } from '../core/types'
+import type { ReplayFrame, ReplayKey, Scenario, ThemeId } from '../core/types'
 import { editorTheme } from './themes'
+import { normalizeReplayKey, offsetAt, replayFrame } from './replay'
 
 type Props = {
   scenario: Scenario
@@ -21,12 +23,24 @@ type Props = {
   fontSize: number
   theme: ThemeId
   onChange: (doc: string, meta: { paste: boolean; undo: boolean }) => void
-  onKey?: () => void
+  onKey?: (key: ReplayKey) => void
+  onReplayFrame?: (frame: ReplayFrame) => void
   onMode?: (mode: string) => void
   onWrite?: () => void
   onReset?: () => void
   onNew?: () => void
 }
+
+const insertIndent = (editor: EditorView) => {
+  if (!getCM(editor)?.state.vim?.insertMode) return false
+
+  editor.dispatch(editor.state.replaceSelection(editor.state.facet(indentUnit)), {
+    scrollIntoView: true,
+    userEvent: 'input',
+  })
+  return true
+}
+
 export function VimEditor({
   scenario,
   readOnly = false,
@@ -34,6 +48,7 @@ export function VimEditor({
   theme,
   onChange,
   onKey,
+  onReplayFrame,
   onMode,
   onWrite,
   onReset,
@@ -43,8 +58,8 @@ export function VimEditor({
   const readOnlyCompartment = useRef(new Compartment())
   const view = useRef<EditorView>()
   const [focused, setFocused] = useState(false)
-  const callback = useRef({ onChange, onKey, onMode, onWrite, onReset, onNew })
-  callback.current = { onChange, onKey, onMode, onWrite, onReset, onNew }
+  const callback = useRef({ onChange, onKey, onReplayFrame, onMode, onWrite, onReset, onNew })
+  callback.current = { onChange, onKey, onReplayFrame, onMode, onWrite, onReset, onNew }
   useEffect(() => {
     if (!host.current) return
     const language =
@@ -64,7 +79,9 @@ export function VimEditor({
         highlightActiveLine(),
         drawSelection(),
         history(),
-        keymap.of([...defaultKeymap, ...historyKeymap]),
+        keymap.of([{ key: 'Tab', run: insertIndent }, ...defaultKeymap, ...historyKeymap]),
+        EditorState.tabSize.of(scenario.editor.tabSize),
+        indentUnit.of(scenario.editor.insertSpaces ? ' '.repeat(scenario.editor.tabSize) : '\t'),
         editorTheme(theme),
         language,
         EditorView.theme({
@@ -77,12 +94,6 @@ export function VimEditor({
           '.cm-gutters': { paddingLeft: '8px' },
         }),
         readOnlyCompartment.current.of(EditorState.readOnly.of(readOnly)),
-        EditorView.domEventHandlers({
-          keydown: () => {
-            callback.current.onKey?.()
-            return false
-          },
-        }),
         EditorView.updateListener.of((update) => {
           if (update.docChanged) {
             callback.current.onChange(update.state.doc.toString(), {
@@ -94,6 +105,22 @@ export function VimEditor({
       ],
     })
     view.current = new EditorView({ state, parent: host.current })
+    const editor = view.current
+    const pendingFrames = new Map<number, ReplayKey>()
+    const emitFrame = (timer: number) => {
+      const key = pendingFrames.get(timer)
+      if (!key) return
+      pendingFrames.delete(timer)
+      callback.current.onReplayFrame?.(replayFrame(editor, key))
+    }
+    const recordKey = (event: KeyboardEvent) => {
+      const key = normalizeReplayKey(event)
+      if (!key) return
+      callback.current.onKey?.(key)
+      const timer = window.setTimeout(() => emitFrame(timer), 0)
+      pendingFrames.set(timer, key)
+    }
+    editor.dom.addEventListener('keydown', recordKey, true)
     try {
       Vim.defineEx?.('write', 'w', () => callback.current.onWrite?.())
       Vim.defineEx?.('edit', 'e', () => callback.current.onReset?.())
@@ -104,7 +131,14 @@ export function VimEditor({
       /* optional Vim telemetry */
     }
     requestAnimationFrame(() => view.current?.focus())
-    return () => view.current?.destroy()
+    return () => {
+      editor.dom.removeEventListener('keydown', recordKey, true)
+      for (const timer of pendingFrames.keys()) {
+        window.clearTimeout(timer)
+        emitFrame(timer)
+      }
+      editor.destroy()
+    }
     // Recreating the editor on read-only changes would discard the live document.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [scenario.id, scenario.startText, scenario.language, fontSize, theme])
@@ -167,12 +201,5 @@ export function VimEditor({
         </button>
       )}
     </div>
-  )
-}
-function offsetAt(text: string, line: number, column: number) {
-  const lines = text.split('\n')
-  return (
-    lines.slice(0, line).reduce((n, v) => n + v.length + 1, 0) +
-    Math.min(column, lines[line]?.length ?? 0)
   )
 }

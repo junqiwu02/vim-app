@@ -32,6 +32,16 @@ const scenarioSchema = z.object({
     .object({
       parKeystrokes: z.number().int().positive().optional(),
       suggestedSolution: z.string().optional(),
+      suggestedKeystrokes: z
+        .array(
+          z
+            .string()
+            .min(1)
+            .max(20)
+            .regex(/^(?:[\s\S]|<(?:Esc|Enter|Tab|BS|Space)>)$/),
+        )
+        .max(512)
+        .optional(),
       hint: z.string().optional(),
     })
     .optional(),

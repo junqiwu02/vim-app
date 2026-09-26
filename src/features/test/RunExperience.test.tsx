@@ -35,7 +35,7 @@ vi.mock('../../editor/VimEditor', () => ({
 vi.mock('../../editor/TargetViewer', () => ({ TargetViewer: () => null }))
 
 describe('RunExperience Ex commands', () => {
-  it('rejects an unfinished document and advances after completion', () => {
+  it('rejects an unfinished document and advances after completion', async () => {
     const onNext = vi.fn()
     render(<RunExperience scenario={builtins[0]} mode="test" onNext={onNext} />)
 
@@ -44,8 +44,10 @@ describe('RunExperience Ex commands', () => {
     expect(onNext).not.toHaveBeenCalled()
 
     fireEvent.click(screen.getByRole('button', { name: 'complete' }))
-    expect(screen.getByText(':w')).toBeTruthy()
-    fireEvent.click(screen.getByRole('button', { name: 'write' }))
+    expect(document.querySelector('.diff-workspace.is-completing')).not.toBeNull()
+    expect(await screen.findByText(':w')).toBeTruthy()
+    const results = await screen.findByRole('region', { name: 'Run complete' })
+    for (const key of [':', 'w', 'Enter']) fireEvent.keyDown(results, { key })
     expect(onNext).toHaveBeenCalledOnce()
   })
 

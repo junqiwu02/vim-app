@@ -1,6 +1,18 @@
 export type Difficulty = 'easy' | 'medium' | 'hard'
 export type Language = 'javascript' | 'typescript' | 'python' | 'text'
 export type ThemeId = 'dark' | 'light' | 'vscode'
+export type ReplayKey = string
+
+export interface ReplayFrame {
+  key?: ReplayKey
+  document: string
+  selection: { anchor: number; head: number }
+  mode: string
+}
+
+export interface AttemptReplay {
+  frames: ReplayFrame[]
+}
 
 export interface Scenario {
   schemaVersion: 1
@@ -23,7 +35,12 @@ export interface Scenario {
     ignoreTrailingWhitespace: boolean
     ignoreBlankLines?: boolean
   }
-  reference?: { parKeystrokes?: number; suggestedSolution?: string; hint?: string }
+  reference?: {
+    parKeystrokes?: number
+    suggestedSolution?: string
+    suggestedKeystrokes?: ReplayKey[]
+    hint?: string
+  }
   pack?: string
 }
 

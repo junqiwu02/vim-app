@@ -27,6 +27,17 @@ describe('scenario core', () => {
     expect(result.ok).toBe(true)
     if (result.ok) expect(result.scenarios[0].validation.ignoreBlankLines).toBe(true)
   })
+  it('rejects unsupported structured replay tokens with an actionable path', () => {
+    const imported = structuredClone(builtins[0])
+    imported.reference!.suggestedKeystrokes = ['<script>']
+    const result = parseScenarioImport(JSON.stringify(imported))
+
+    expect(result.ok).toBe(false)
+    if (!result.ok)
+      expect(
+        result.errors.some((error) => error.startsWith('reference.suggestedKeystrokes.0:')),
+      ).toBe(true)
+  })
   it('newline-terminates every built-in start and target at a new content version', () => {
     for (const scenario of builtins) {
       expect(scenario.startText.endsWith('\n')).toBe(true)

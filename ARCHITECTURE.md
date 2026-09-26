@@ -18,7 +18,9 @@ The homepage opens directly into a ready challenge—no landing page, login, or 
 - Show the target document in a read-only side-by-side panel throughout the attempt.
 - Start timing on the first document-changing input.
 - Finish automatically when the document matches the target.
-- Show time, keystrokes, personal best, retry, and next challenge.
+- Replace the editing workspace on completion with results and side-by-side replays of the player's
+  attempt and the verified suggested solution.
+- Show time, keystrokes, personal best, retry, random, and next challenge with the replay results.
 - Store completed runs locally.
 - Do not show hints during an attempt.
 
@@ -128,6 +130,93 @@ indicators, focus changes, scenario version, and seed.
 Personal bests rank by successful completion, lowest time, then fewest keystrokes. Avoid a composite
 efficiency score until real usage data exists.
 
+### Post-completion replay results
+
+Completion replaces the editable-document/target workspace; it must not appear as a modal layered
+over the completed editor. Keep the run heading and compact result metrics, then use the same
+two-column visual language as the editing workspace:
+
+- **Your replay** starts at the scenario's original document and cursor and shows the frozen state
+  after each recorded input.
+- **Suggested replay** starts from that same state and shows the result of each authored suggested
+  input. It is revealed only after completion in Test mode. If an imported scenario has no verified
+  replay, show an explicit unavailable state rather than attempting to interpret display text.
+- Put each replay's complete key sequence directly below its viewer. Distinguish executed, current,
+  and remaining keys without relying on color alone. Wrap eagerly after semantic boundaries such as
+  `<Esc>` and `<Enter>`, otherwise wrap at the available width. Limit the viewport to three key rows
+  and automatically scroll it up or down to keep the current key visible.
+- A single comparison step drives both panels. At step zero both show the original state; advancing
+  applies one input to each replay. When one sequence is shorter, hold its final frame while the
+  other continues. Show `step / total` for each side.
+- Use `h` and `l` for previous and next, with Left and Right Arrow aliases. Also provide labeled
+  Previous and Next buttons for discoverability, touch, and assistive technology. Ignore replay
+  shortcuts when an interactive control has focus or a modifier is held.
+- Move the completion label, personal-best status, elapsed time, and total keystrokes into a result
+  summary above the replay grid. Put retry, random, and next-drill actions below it. Preserve the
+  post-completion `:e`, `:n`, and `:w` commands even though the live editor is unmounted. A
+  result-level command buffer takes precedence over replay shortcuts after `:` is entered.
+- On completion, move focus to a labeled results region and announce completion once. The replay
+  viewers themselves are read-only and removed from the tab order.
+
+Replay is a rendering of recorded editor observations, not a second game session. Define plain,
+framework-independent data contracts in `src/core/`, while all key normalization, Vim handling,
+cursor extraction, and suggested-key execution remain in `src/editor/`:
+
+```ts
+type ReplayKey = string // one normalized key, such as "d", " ", "<Esc>", or "<Enter>"
+
+interface ReplayFrame {
+  key?: ReplayKey // absent for the initial frame
+  document: string
+  selection: { anchor: number; head: number }
+  mode: string
+}
+
+interface AttemptReplay {
+  frames: ReplayFrame[] // frame zero is always the authored initial state
+}
+```
+
+Capture a frame after each handled editor input, including non-mutating Vim inputs such as an
+operator prefix or mode change. Store document snapshots initially: drills are deliberately small,
+and snapshots avoid replay drift across CodeMirror/Vim upgrades. Paste and composition must produce
+explicit normalized events and a resulting snapshot; never reconstruct user replay by executing
+untrusted text.
+
+The existing `reference.suggestedSolution` remains human-readable display text. Add an optional
+structured `reference.suggestedKeystrokes: ReplayKey[]` for deterministic playback. Array entries
+are individual keys, so literal spaces are distinct from named keys and visual separators. Validate
+the field through the scenario Zod schema. Every bundled sequence must be executed through the real
+Vim editor adapter in a test and must reach the scenario target; imported scenarios without this
+field remain playable.
+
+Treat imported suggested keys as untrusted input. Bound the sequence length and token length in the
+schema, accept only normalized keyboard tokens, and run them in an isolated replay adapter with no
+application callbacks or external side effects. Show the suggested replay only if isolated playback
+reaches the target under the scenario's declared normalization rules.
+
+Keep the current-attempt replay in memory for the first version. Do not migrate IndexedDB or add
+replay data to `RunResult` until history replay is a product requirement. If replay persistence is
+added later, make `events` optional, version the event format, and preserve the scenario content
+version, seed, and initial cursor needed for deterministic display.
+
+Implementation order:
+
+1. Add replay contracts and structured suggested keystrokes, migrate bundled solutions, and verify
+   each authored sequence against its target through the actual Vim adapter.
+2. Extend the editor boundary with one post-input replay callback that freezes the normalized key,
+   document, selection, and mode together. Make this recorder the source of truth for the displayed
+   and saved keystroke count so completion cannot omit its final key.
+3. Add a read-only replay viewer in `src/editor/` and a results/replay feature component that owns
+   the shared step index and keyboard controls. Do not put CodeMirror state into the session engine.
+4. Replace the completed workspace in `RunExperience`, relocate the existing result content and
+   actions, and retain result-level handling for `:e`, `:n`, and `:w` after `VimEditor` unmounts.
+5. Add responsive behavior: two columns at desktop widths and stacked panels on narrow screens, with
+   the shared controls and key strips remaining visible and usable.
+6. Cover recorder ordering, the completion key, undo/paste/mode-only inputs, solution verification,
+   synchronized stepping, shortcut exclusions, missing-solution fallback, focus, route actions, and
+   mobile layout before removing the old result card styles.
+
 ## Scenario JSON
 
 Every file must have a `schemaVersion`. Validate imports with Zod and show errors with actionable
@@ -157,7 +246,7 @@ JSON paths.
   },
   "reference": {
     "parKeystrokes": 28,
-    "suggestedSolution": "Optional command sequence"
+    "suggestedSolution": "Optional display command sequence"
   }
 }
 ```
@@ -226,6 +315,8 @@ placeholders during the MVP beyond narrow repository interfaces.
 - Personal-best ordering and persistence migrations.
 - Vim motions, operators, counts, text objects, visual mode, registers, undo, repeat, and search.
 - Homepage immediate play, completion, retry, and next via keyboard.
+- Replay capture ordering, deterministic suggested playback, synchronized stepping, focus, and
+  keyboard/touch controls on the completion results.
 - Import errors, refresh persistence, storage fallback, and direct route loading.
 
 ## Implementation phases
@@ -249,8 +340,8 @@ Give every built-in scenario a verified solution and completion test.
 ### 4. Test homepage
 
 Implement the session engine and make `/` immediately playable. Add timing, automatic completion,
-results, retry, next, errors, and in-memory fallback. Completion must fire once and freeze the
-result.
+replay results, retry, next, errors, and in-memory fallback. Completion must fire once and freeze
+the result and its attempt replay.
 
 ### 5. Practice
 

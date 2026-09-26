@@ -55,6 +55,9 @@ regressions.
 - Store wall-clock timestamps only for history display.
 - Keep editor document, mode, cursor, Vim-command, paste, and undo observations behind the editor
   adapter rather than reaching into CodeMirror from feature components.
+- Keep replay key normalization, post-input frame capture, cursor extraction, and suggested-key
+  execution behind the editor boundary. Replay UI may consume frozen plain-data frames but must not
+  drive CodeMirror or inspect its internals directly.
 - Preserve static deployment and SPA route fallback behavior, including direct loads of nested
   routes.
 - Do not add backend, authentication, matchmaking, or cloud-sync placeholders unless the product
@@ -70,9 +73,14 @@ regressions.
 - Built-in completion ignores empty and whitespace-only lines, but every character on nonblank lines
   remains exact unless another normalization rule says otherwise.
 - Completion fires once and freezes the result.
+- Completion replaces the editing workspace with a two-column comparison of the frozen attempt
+  replay and the verified suggested replay. Both begin at the authored initial state and share one
+  comparison step.
 - `:w` continues after completion, `:e` resets the current attempt, and `:n` abandons it for a
-  random different Test scenario when alternatives exist.
-- Test attempts never show hints or suggested solutions.
+  random different Test scenario when alternatives exist. Preserve these commands when the live
+  editor is replaced by results.
+- Test attempts never show hints or suggested solutions before completion; the verified suggested
+  replay may be revealed in the completed results.
 - Practice lives under `/practice` and may reveal targets, hints, and suggested solutions.
 - Practice results and Test personal bests remain separate.
 - Personal bests sort by successful completion, then lowest time, then fewest keystrokes.
@@ -98,6 +106,12 @@ regressions.
   version and seed must always resolve to the same content.
 - Every built-in scenario should have a reachable target and a verified suggested solution when one
   is provided.
+- Treat `reference.suggestedSolution` as display text, not executable input. Use the structured
+  `reference.suggestedKeystrokes` sequence for replay, and verify bundled sequences through the real
+  Vim adapter. Imported scenarios without structured replay data must remain playable and receive a
+  clear unavailable state in results.
+- Bound and allowlist imported replay tokens, execute them only in an isolated editor adapter with
+  no application callbacks, and reveal the replay only when it reaches the validated target.
 
 ## UI and accessibility
 
@@ -106,6 +120,11 @@ regressions.
   interactive controls should restore editor focus; do not hijack Tab or modifier shortcuts.
 - Do not intercept keys in a way that breaks Vim motions, operators, counts, registers, undo,
   repeat, search, or visual mode.
+- In completed results, use `h`/`l` for replay stepping with Left/Right Arrow aliases and visible
+  Previous/Next controls. Do not handle these shortcuts from inputs, buttons, links, editable
+  elements, or modified key combinations.
+- When results replace the editor, focus a labeled results region, announce completion once, and
+  keep read-only replay viewers out of the tab order.
 - Keep essential controls reachable without a pointer and provide accessible labels for icon-only
   controls.
 - Maintain usable layouts at phone and desktop widths.
@@ -136,6 +155,8 @@ Add or update tests when changing:
 - Session transitions, timing through a fake/injectable clock, completion, and reset behavior
 - Personal-best ordering or persistence migrations
 - Vim adapter behavior and keyboard handling
+- Replay frame ordering and completion-key capture; structured solution verification; synchronized
+  replay stepping; missing-solution fallback; and result focus/shortcut behavior
 - Import validation, duplicate handling, refresh persistence, or storage fallback
 - Route-level flows such as immediate Test play, retry, next challenge, and direct Practice routes
 

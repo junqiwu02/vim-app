@@ -1,5 +1,7 @@
 import type { Scenario } from '../core/types'
 
+const keys = (sequence: string) => sequence.match(/<(?:Esc|Enter|Tab|BS|Space)>|[\s\S]/g) ?? []
+
 const defaults = {
   schemaVersion: 1 as const,
   type: 'scenario' as const,
@@ -50,6 +52,7 @@ export const builtins: Scenario[] = [
       parKeystrokes: 3,
       hint: 'Delete a word with an operator and motion.',
       suggestedSolution: 'dw',
+      suggestedKeystrokes: keys('dw'),
     },
   }),
   make({
@@ -65,7 +68,8 @@ export const builtins: Scenario[] = [
     reference: {
       parKeystrokes: 18,
       hint: 'Change the word, then find and repeat.',
-      suggestedSolution: 'ciwsize<Esc> /n<Enter> . /n<Enter> .',
+      suggestedSolution: ':%s/\\bn\\b/size/g<Enter>',
+      suggestedKeystrokes: keys(':%s/\\bn\\b/size/g<Enter>'),
     },
   }),
   make({
@@ -82,6 +86,7 @@ export const builtins: Scenario[] = [
       parKeystrokes: 7,
       hint: 'Change inside the current word.',
       suggestedSolution: 'ciwtrue<Esc>',
+      suggestedKeystrokes: keys('ciwtrue<Esc>'),
     },
   }),
   make({
@@ -94,7 +99,12 @@ export const builtins: Scenario[] = [
     startText: 'if score > 10:\n    celebrate()',
     targetText: 'if score >= 10:\n    celebrate()',
     cursor: { line: 0, column: 9 },
-    reference: { parKeystrokes: 3, hint: 'Append one character.', suggestedSolution: 'a=<Esc>' },
+    reference: {
+      parKeystrokes: 3,
+      hint: 'Append one character.',
+      suggestedSolution: 'a=<Esc>',
+      suggestedKeystrokes: keys('a=<Esc>'),
+    },
   }),
   make({
     id: 'typescript.type.001',
@@ -110,6 +120,7 @@ export const builtins: Scenario[] = [
       parKeystrokes: 9,
       hint: 'Change the word under the cursor.',
       suggestedSolution: 'ciwstring<Esc>',
+      suggestedKeystrokes: keys('ciwstring<Esc>'),
     },
   }),
   make({
@@ -126,7 +137,8 @@ export const builtins: Scenario[] = [
     reference: {
       parKeystrokes: 40,
       hint: 'Open a line, define the value, then substitute occurrences.',
-      suggestedSolution: 'Oconst count = items.length;<Esc> j :s/items.length/count/g<Enter>',
+      suggestedSolution: 'Oconst count = items.length;<Esc> :3s/items.length/count/g<Enter>',
+      suggestedKeystrokes: keys('Oconst count = items.length;<Esc>:3s/items.length/count/g<Enter>'),
     },
   }),
   make({
@@ -142,7 +154,8 @@ export const builtins: Scenario[] = [
     reference: {
       parKeystrokes: 35,
       hint: 'Open lines above the return.',
-      suggestedSolution: 'Oif b == 0:<Esc> oreturn 0<Esc> >>',
+      suggestedSolution: 'O  if b == 0:<Esc> oreturn 0<Esc> >>',
+      suggestedKeystrokes: keys('O  if b == 0:<Esc>oreturn 0<Esc>>>'),
     },
   }),
   make({
@@ -158,7 +171,8 @@ export const builtins: Scenario[] = [
     reference: {
       parKeystrokes: 17,
       hint: 'Insert before the closing brace.',
-      suggestedSolution: 'i, active: true<Esc>',
+      suggestedSolution: 'a, active: true<Esc>',
+      suggestedKeystrokes: keys('a, active: true<Esc>'),
     },
   }),
   make({
@@ -171,7 +185,12 @@ export const builtins: Scenario[] = [
     startText: 'run tests\nwrite code\nship',
     targetText: 'write code\nrun tests\nship',
     cursor: { line: 0, column: 0 },
-    reference: { parKeystrokes: 3, hint: 'Move the current line down.', suggestedSolution: 'ddp' },
+    reference: {
+      parKeystrokes: 3,
+      hint: 'Move the current line down.',
+      suggestedSolution: 'ddp',
+      suggestedKeystrokes: keys('ddp'),
+    },
   }),
   make({
     id: 'javascript.return.001',
@@ -186,7 +205,8 @@ export const builtins: Scenario[] = [
     reference: {
       parKeystrokes: 30,
       hint: 'Rewrite the condition line, then dedent the body.',
-      suggestedSolution: 'ccif (!user) return;<Esc> j << $x',
+      suggestedSolution: 'ccif (!user) return;<Esc> :2s/^  //<Enter> :3d<Enter>',
+      suggestedKeystrokes: keys('ccif (!user) return;<Esc>:2s/^  //<Enter>:3d<Enter>'),
     },
   }),
   make({
@@ -203,6 +223,7 @@ export const builtins: Scenario[] = [
       parKeystrokes: 43,
       hint: 'Change the entire three-line block.',
       suggestedSolution: '3ccsquares = [n * n for n in range(5)]<Esc>',
+      suggestedKeystrokes: keys('3ccsquares = [n * n for n in range(5)]<Esc>'),
     },
   }),
   make({
@@ -219,6 +240,7 @@ export const builtins: Scenario[] = [
       parKeystrokes: 5,
       hint: 'Toggle case, then append at line end.',
       suggestedSolution: '~A.<Esc>',
+      suggestedKeystrokes: keys('~A.<Esc>'),
     },
   }),
 ]
